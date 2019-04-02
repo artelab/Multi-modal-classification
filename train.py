@@ -8,6 +8,7 @@ from tflearn.data_utils import pad_sequences
 
 from BestDataHelperEverCreated import BestDataHelperEverCreated
 from TextImgCNN import TextImgCNN
+from dataManagement.DataLoader import DataLoader
 
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
@@ -222,29 +223,30 @@ def main(argv=None):
     output_image_width = FLAGS.output_image_width
     encoding_height = FLAGS.encoding_height
 
-    data_helper = BestDataHelperEverCreated(num_words_to_keep)
+    data_helper = BestDataHelperEverCreated(num_words_to_keep, FLAGS.save_model_dir_name)
 
     train_path = FLAGS.train_path
     val_path = FLAGS.val_path
 
-    train_x, train_y, train_img_paths, test_x, test_y, test_imgs_paths = data_helper.load_shuffle_data(train_path,
-                                                                                                       val_path)
-    data_helper.train_one_hot_encoder(train_y)
-    train_y = data_helper.encode_to_one_hot(train_y)
-    test_y = data_helper.encode_to_one_hot(test_y)
+    data_loader = DataLoader()
+    text_train, label_train, img_train, val_texts, val_labels, val_images = data_loader.load_shuffle_data(train_path, val_path)
 
-    data_helper.train_tokenizer(train_x)
+    data_helper.train_one_hot_encoder(label_train)
+    train_y = data_helper.encode_to_one_hot(label_train)
+    test_y = data_helper.encode_to_one_hot(val_labels)
 
-    train_x = data_helper.convert_to_indices(train_x)
-    test_x = data_helper.convert_to_indices(test_x)
+    data_helper.train_tokenizer(text_train)
+
+    train_x = data_helper.convert_to_indices(text_train)
+    test_x = data_helper.convert_to_indices(val_texts)
 
     train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
     test_x = pad_sequences(test_x, maxlen=num_words_x_doc, value=0.)
 
-    train(train_x, train_y, train_img_paths, test_x, test_y, test_imgs_paths, num_words_to_keep, output_image_width,
+    train(train_x, train_y, img_train, test_x, test_y, val_images, num_words_to_keep, output_image_width,
           encoding_height, patience)
 
-    data_helper.pickle_everything_to_disk(FLAGS.save_model_dir_name)
+    data_helper.pickle_models_to_disk()
 
 
 if __name__ == '__main__':

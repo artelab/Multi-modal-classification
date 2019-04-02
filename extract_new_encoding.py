@@ -9,6 +9,7 @@ import tensorflow as tf
 from tflearn.data_utils import pad_sequences
 
 from BestDataHelperEverCreated import BestDataHelperEverCreated
+from dataManagement.DataLoader import DataLoader
 
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
@@ -138,7 +139,7 @@ def main(argv=None):
     batch_size = FLAGS.batch_size
     model_dir = FLAGS.save_model_dir_name  # 'runs/1530104868'
 
-    data_helper = BestDataHelperEverCreated(num_words_to_keep)
+    data_helper = BestDataHelperEverCreated(num_words_to_keep, FLAGS.save_model_dir_name)
 
     train_path = FLAGS.train_path
     val_path = FLAGS.val_path
@@ -153,10 +154,13 @@ def main(argv=None):
     print("Train: " + str(train_length))
     print("Val: " + str(val_length))
 
+    data_loader = DataLoader()
+    data_loader.load_data(train_path)
+
     text_train, label_train, img_train = data_helper.load_data(train_path)
     text_val, label_val, img_val = data_helper.load_data(val_path)
 
-    label_encoder, one_hot_encoder, tokenizer = data_helper.load_all_pickles(FLAGS.save_model_dir_name)
+    label_encoder, one_hot_encoder, tokenizer = data_helper.load_and_set_pickles()
 
     integer_encoded = label_encoder.transform(label_train)
     integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
