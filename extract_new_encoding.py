@@ -156,21 +156,16 @@ def main(argv=None):
 
     data_loader = DataLoader()
     data_loader.load_data(train_path, val_path, delimiter='|')
-    text_train, label_train, img_train = data_loader.get_training_data()
-    text_val, label_val, img_val = data_loader.get_val_data()
 
-    label_encoder, one_hot_encoder, tokenizer = data_helper.load_and_set_pickles()
+    training_data = data_loader.get_training_data()
+    val_data = data_loader.get_val_data()
 
-    integer_encoded = label_encoder.transform(label_train)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    label_train = one_hot_encoder.transform(integer_encoded)
+    data_helper.load_from_pickles()
+    label_train = data_helper.labels_to_one_hot(training_data.get_labels())
+    label_val = data_helper.labels_to_one_hot(val_data.get_labels())
 
-    integer_encoded = label_encoder.transform(label_val)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    label_val = one_hot_encoder.transform(integer_encoded)
-
-    text_train = tokenizer.texts_to_sequences(text_train)
-    text_val = tokenizer.texts_to_sequences(text_val)
+    text_train = data_helper.texts_to_indices(training_data.get_texts())
+    text_val = data_helper.texts_to_indices(val_data.get_texts())
 
     text_train = pad_sequences(text_train, maxlen=num_words_x_doc, value=0.)
     text_val = pad_sequences(text_val, maxlen=num_words_x_doc, value=0.)
@@ -187,12 +182,12 @@ def main(argv=None):
             saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
             saver.restore(sess, checkpoint_file)
 
-            train_dataset = tf.data.Dataset.from_tensor_slices((text_train, label_train, img_train))
+            train_dataset = tf.data.Dataset.from_tensor_slices((text_train, label_train, (training_data.get_images())))
             train_dataset = train_dataset.batch(batch_size)
             train_iterator = train_dataset.make_initializable_iterator()
             train_next_element = train_iterator.get_next()
 
-            val_dataset = tf.data.Dataset.from_tensor_slices((text_val, label_val, img_val))
+            val_dataset = tf.data.Dataset.from_tensor_slices((text_val, label_val, (val_data.get_images())))
             val_dataset = val_dataset.batch(batch_size)
             val_iterator = val_dataset.make_initializable_iterator()
             val_next_element = val_iterator.get_next()

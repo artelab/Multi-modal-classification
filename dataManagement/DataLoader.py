@@ -37,13 +37,13 @@ class DataLoader(object):
         self.val.set_labels(val_labels)
         self.val.set_images(val_images)
 
-    def set_training_data(self, train_images, train_labels, train_texts):
+    def set_training_data(self,train_texts, train_labels, train_images):
         self.train.set_texts(train_texts)
         self.train.set_labels(train_labels)
         self.train.set_images(train_images)
 
     def get_training_data(self):
-        return self.train.get_texts(), self.train.get_labels(), self.train.get_images()
+        return self.train
 
     def get_val_data(self):
-        return self.val.get_texts(), self.val.get_labels(), self.val.get_images()
+        return self.val
