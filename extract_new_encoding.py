@@ -155,10 +155,9 @@ def main(argv=None):
     print("Val: " + str(val_length))
 
     data_loader = DataLoader()
-    data_loader.load_data(train_path)
-
-    text_train, label_train, img_train = data_helper.load_data(train_path)
-    text_val, label_val, img_val = data_helper.load_data(val_path)
+    data_loader.load_data(train_path, val_path, delimiter='|')
+    text_train, label_train, img_train = data_loader.get_training_data()
+    text_val, label_val, img_val = data_loader.get_val_data()
 
     label_encoder, one_hot_encoder, tokenizer = data_helper.load_and_set_pickles()
 

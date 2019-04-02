@@ -229,21 +229,24 @@ def main(argv=None):
     val_path = FLAGS.val_path
 
     data_loader = DataLoader()
-    text_train, label_train, img_train, val_texts, val_labels, val_images = data_loader.load_shuffle_data(train_path, val_path)
+    data_loader.load_data(train_path, val_path, delimiter='|', shuffle_data=True)
 
-    data_helper.train_one_hot_encoder(label_train)
-    train_y = data_helper.encode_to_one_hot(label_train)
+    train_texts, train_labels, train_images = data_loader.get_training_data()
+    val_texts, val_labels, val_images = data_loader.get_val_data()
+
+    data_helper.train_one_hot_encoder(train_labels)
+    train_y = data_helper.encode_to_one_hot(train_labels)
     test_y = data_helper.encode_to_one_hot(val_labels)
 
-    data_helper.train_tokenizer(text_train)
+    data_helper.train_tokenizer(train_texts)
 
-    train_x = data_helper.convert_to_indices(text_train)
+    train_x = data_helper.convert_to_indices(train_texts)
     test_x = data_helper.convert_to_indices(val_texts)
 
     train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
     test_x = pad_sequences(test_x, maxlen=num_words_x_doc, value=0.)
 
-    train(train_x, train_y, img_train, test_x, test_y, val_images, num_words_to_keep, output_image_width,
+    train(train_x, train_y, train_images, test_x, test_y, val_images, num_words_to_keep, output_image_width,
           encoding_height, patience)
 
     data_helper.pickle_models_to_disk()

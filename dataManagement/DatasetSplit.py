@@ -8,11 +8,11 @@ class DatasetSplit(object):
         self.labels = []
         self.images = []
 
-    def load_data(self, data_file):
+    def load_data(self, data_file, delimiter):
         with open(data_file) as tr:
             for line in tqdm(tr.readlines()):
                 line = line.replace("\n", "")
-                line = line.split('|')
+                line = line.split(delimiter)
                 self.texts.append(line[0])
                 self.labels.append(line[1])
                 self.images.append(line[2])
@@ -25,3 +25,12 @@ class DatasetSplit(object):
 
     def get_images(self):
         return self.images
+
+    def set_texts(self, texts):
+        self.texts = texts
+
+    def set_labels(self, labels):
+        self.labels = labels
+
+    def set_images(self, images):
+        self.images = images
