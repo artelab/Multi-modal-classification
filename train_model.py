@@ -49,6 +49,7 @@ def main():
         shutil.rmtree(FLAGS.save_model_dir_name)
 
     checkpoint_dir = os.path.abspath(os.path.join(FLAGS.save_model_dir_name, "checkpoints"))
+
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -65,24 +66,37 @@ def main():
     training_data = data_loader.get_training_data()
     val_data = data_loader.get_val_data()
 
-    data_helper.train_one_hot_encoder(training_data.get_labels())
-    train_y = data_helper.labels_to_one_hot(training_data.get_labels())
-    val_y = data_helper.labels_to_one_hot(val_data.get_labels())
-
-    data_helper.train_tokenizer(training_data.get_texts())
-    train_x = data_helper.texts_to_indices(training_data.get_texts())
-    val_x = data_helper.texts_to_indices(val_data.get_texts())
+    train_y, val_y = preprocess_labels(data_helper, training_data, val_data)
+    train_x, val_x = preprocess_texts(data_helper, training_data, val_data, num_words_x_doc)
 
     data_helper.pickle_models_to_disk()
-
-    train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
-    val_x = pad_sequences(val_x, maxlen=num_words_x_doc, value=0.)
 
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
 
     trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data())
     trainer.train(training_params, model_params)
+
+
+def preprocess_labels(data_helper, training_data, val_data):
+    data_helper.train_one_hot_encoder(training_data.get_labels())
+
+    train_y = data_helper.labels_to_one_hot(training_data.get_labels())
+    val_y = data_helper.labels_to_one_hot(val_data.get_labels())
+
+    return train_y, val_y
+
+
+def preprocess_texts(data_helper, training_data, val_data, num_words_x_doc):
+    data_helper.train_tokenizer(training_data.get_texts())
+
+    train_x = data_helper.texts_to_indices(training_data.get_texts())
+    train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
+
+    val_x = data_helper.texts_to_indices(val_data.get_texts())
+    val_x = pad_sequences(val_x, maxlen=num_words_x_doc, value=0.)
+
+    return train_x, val_x
 
 
 if __name__ == '__main__':

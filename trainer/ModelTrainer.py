@@ -5,6 +5,8 @@ import cv2
 import tensorflow as tf
 
 from TextImgCNN import TextImgCNN
+from logger.FileLogger import FileLogger
+from result.PartialResult import PartialResult
 from view.View import View
 
 
@@ -103,11 +105,8 @@ class ModelTrainer(object):
                 dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
 
                 saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
-
-                with open(os.path.join(out_dir, 'results.txt'), 'a') as resfile:
-                    resfile.write('Model dir: {}\n'.format(out_dir))
-                    # TODO questo non mi piace, solo per un log
-                    resfile.write('Dataset: {}\n'.format(self.train_dataset.get_images()[0]))
+                file_logger = FileLogger(os.path.join(out_dir, 'result.txt'))
+                file_logger.write_header(out_dir, self.train_dataset.get_images()[0].split('/')[4])
 
                 # Initialize all variables
                 sess.run(tf.global_variables_initializer())
@@ -115,8 +114,7 @@ class ModelTrainer(object):
                 train_length = len(self.train_dataset.get_texts())
                 val_length = len(self.val_dataset.get_texts())
 
-                for ep in range(model_params.get_no_of_epochs()):
-                    self.view.print_to_screen('***** Epoch ' + str(ep) + ' *****')
+                for epoch in range(model_params.get_no_of_epochs()):
                     sess.run(train_iterator.initializer)
 
                     for b in range((train_length // training_params.get_batch_size()) + 1):
@@ -159,28 +157,18 @@ class ModelTrainer(object):
                                 acc = dev_step_only_accuracy(test_element[0], test_element[1], test_img_batch)
                                 correct += acc * len(test_path_list)
                             test_accuracy = correct / val_length
-                            self.view.print_to_screen('Test accuracy: ' + str(test_accuracy) +
-                                                      ', best accuracy: ' + str(best_accuracy) +
-                                                      ', patience: ' + str(patience))
 
                             if test_accuracy > best_accuracy:
                                 best_accuracy = test_accuracy
                                 patience = model_params.get_patience()
-                                checkpoint_dir = os.path.abspath(
-                                    os.path.join(model_params.get_model_directory(), 'checkpoints'))
-                                checkpoint_prefix = os.path.join(checkpoint_dir, 'model')
-                                path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                                path = self.store_model(model_params, current_step, sess, saver)
                                 self.view.print_to_screen('Saved model checkpoint to {}\n'.format(path))
                             else:
                                 patience -= 1
 
-                            self.view.print_to_screen(
-                                'Test accuracy: ' + str(test_accuracy) + ', best accuracy: ' + str(
-                                    best_accuracy) + ', patience: ' + str(patience) + '\n')
-
-                            with open(os.path.join(out_dir, 'results.txt'), 'a') as resfile:
-                                resfile.write('epoch: %d, step: %d, test acc: %f, best acc: %f, patience: %d\n' % (
-                                    ep, current_step, test_accuracy, best_accuracy, patience))
+                            partial_result = PartialResult(epoch, current_step, test_accuracy, best_accuracy, patience)
+                            self.view.print_to_screen(str(partial_result))
+                            file_logger.write_partial_result_to_file(partial_result)
 
                             if patience == 0:
                                 return
@@ -195,3 +183,9 @@ class ModelTrainer(object):
         iterator = dataset.make_initializable_iterator()
         next_element = iterator.get_next()
         return iterator, next_element
+
+    def store_model(self, model_params, current_step, sess, saver):
+        checkpoint_dir = os.path.abspath(
+            os.path.join(model_params.get_model_directory(), 'checkpoints'))
+        checkpoint_prefix = os.path.join(checkpoint_dir, 'model')
+        return saver.save(sess, checkpoint_prefix, global_step=current_step)
