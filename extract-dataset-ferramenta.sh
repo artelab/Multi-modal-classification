@@ -9,7 +9,7 @@ ste_superpixel_size=3
 
 echo "output_image_width $w"
 echo "encoding_height $encoding_height"
-python3 extract_new_encoding.py \
+python3 extract_encoded_images.py \
                  --train_path "${HOME}/datasets/ferramenta52-multimodal/train.csv"  \
                  --val_path "${HOME}/datasets/ferramenta52-multimodal/val.csv"  \
                  --output_dir "${HOME}/datasets/ferramenta52-multimodal/new_blank_encoding/${w}x${w}-${encoding_height}-sep${ste_separator_size}-spixel${ste_superpixel_size}" \

@@ -7,7 +7,7 @@ from textManagement.TextTokenizer import TextTokenizer
 from view.View import View
 
 
-class BestDataHelperEverCreated:
+class DataHelper:
 
     def __init__(self, num_words_to_keep, directory_of_data):
         self.view = View()

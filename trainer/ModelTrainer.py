@@ -1,12 +1,12 @@
-import datetime
 import os
 
 import cv2
 import tensorflow as tf
 
-from TextImgCNN import TextImgCNN
 from logger.FileLogger import FileLogger
+from model.TextImgCNN import TextImgCNN
 from result.PartialResult import PartialResult
+from result.TrainingResult import TrainingResult
 from view.View import View
 
 
@@ -32,8 +32,10 @@ class ModelTrainer(object):
             _, step, summaries, loss, accuracy = sess.run(
                 [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
                 feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            self.view.print_to_screen('{}: step {}, loss {:g}, acc {:g}'.format(time_str, step, loss, accuracy))
+
+            training_result = TrainingResult(step, loss, accuracy)
+            self.view.print_to_screen(str(training_result))
+
             train_summary_writer.add_summary(summaries, step)
 
         def dev_step_only_accuracy(x_batch, y_batch, images_batch):
@@ -173,7 +175,8 @@ class ModelTrainer(object):
                             if patience == 0:
                                 return
 
-    def init_iterator(self, dataset_split, batch_size):
+    @staticmethod
+    def init_iterator(dataset_split, batch_size):
         texts = dataset_split.get_texts()
         labels = dataset_split.get_labels()
         images = dataset_split.get_images()
@@ -184,7 +187,8 @@ class ModelTrainer(object):
         next_element = iterator.get_next()
         return iterator, next_element
 
-    def store_model(self, model_params, current_step, sess, saver):
+    @staticmethod
+    def store_model(model_params, current_step, sess, saver):
         checkpoint_dir = os.path.abspath(
             os.path.join(model_params.get_model_directory(), 'checkpoints'))
         checkpoint_prefix = os.path.join(checkpoint_dir, 'model')

@@ -4,7 +4,7 @@ import shutil
 import tensorflow as tf
 from tflearn.data_utils import pad_sequences
 
-from BestDataHelperEverCreated import BestDataHelperEverCreated
+from dataManagement.DataHelper import DataHelper
 from dataManagement.DataLoader import DataLoader
 from parameterManager.ModelParameters import ModelParameters
 from parameterManager.TrainingParameters import TrainingParameters
@@ -58,7 +58,7 @@ def main():
                                          FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
     model_params = ModelParameters(FLAGS.save_model_dir_name, FLAGS.num_epochs, FLAGS.patience, FLAGS.evaluate_every)
 
-    data_helper = BestDataHelperEverCreated(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
+    data_helper = DataHelper(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
 
     data_loader = DataLoader()
     data_loader.load_data(FLAGS.train_path, FLAGS.val_path, delimiter='|', shuffle_data=True)
@@ -69,10 +69,10 @@ def main():
     train_y, val_y = preprocess_labels(data_helper, training_data, val_data)
     train_x, val_x = preprocess_texts(data_helper, training_data, val_data, num_words_x_doc)
 
-    data_helper.pickle_models_to_disk()
-
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
+
+    data_helper.pickle_models_to_disk()
 
     trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data())
     trainer.train(training_params, model_params)

@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 from tflearn.data_utils import pad_sequences
 
-from BestDataHelperEverCreated import BestDataHelperEverCreated
+from dataManagement.DataHelper import DataHelper
 from dataManagement.DataLoader import DataLoader
 
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
@@ -53,6 +53,14 @@ superpixels_per_col = math.ceil(num_features / superpixels_per_row)
 
 def embedding_to_image(root_dir, img_sum, test_img):
     for image, path in zip(img_sum, test_img):
+        dir_names = path.split('/')[-3:]
+        full_path = os.path.join(root_dir,
+                                 os.path.join(dir_names[0], dir_names[1], dir_names[2].replace('.jpg', '.png')))
+        parent_dir = os.path.abspath(os.path.join(full_path, os.pardir))
+
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
+
         # Load a color image
         img = cv2.imread(path, cv2.IMREAD_COLOR)
         # skip empty images
@@ -96,13 +104,6 @@ def embedding_to_image(root_dir, img_sum, test_img):
                 sp_i += 1
                 spw += 1
 
-        dir_names = path.split('/')[-3:]
-        full_path = os.path.join(root_dir,
-                                 os.path.join(dir_names[0], dir_names[1], dir_names[2].replace('.jpg', '.png')))
-        parent_dir = os.path.abspath(os.path.join(full_path, os.pardir))
-
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
         cv2.imwrite(full_path, img)
 
 
@@ -130,16 +131,16 @@ def write_to_disk(root_dir, img_sum, test_img, save_features=False):
                                                                                                                   '')))
 
 
-def main(argv=None):
+def main():
     num_words_to_keep = 30000
     num_words_x_doc = 100
 
     image_size = FLAGS.output_image_width
 
     batch_size = FLAGS.batch_size
-    model_dir = FLAGS.save_model_dir_name  # 'runs/1530104868'
+    model_dir = FLAGS.save_model_dir_name
 
-    data_helper = BestDataHelperEverCreated(num_words_to_keep, FLAGS.save_model_dir_name)
+    data_helper = DataHelper(num_words_to_keep, FLAGS.save_model_dir_name)
 
     train_path = FLAGS.train_path
     val_path = FLAGS.val_path
