@@ -31,7 +31,7 @@ tf.flags.DEFINE_string("val_path", "/home/super/datasets/ferramenta52-multimodal
 tf.flags.DEFINE_string("save_model_dir_name", "runs/ferramenta52-10-1",
                        "dir used to save the model")
 
-tf.flags.DEFINE_string("gpu_id", "0,1,2", "ID of the GPU to be used")
+tf.flags.DEFINE_string("gpu_id", "0,1", "ID of the GPU to be used")
 
 FLAGS = tf.flags.FLAGS
 
@@ -45,10 +45,10 @@ def main():
     output_image_width = FLAGS.output_image_width
     encoding_height = FLAGS.encoding_height
 
+    checkpoint_dir = os.path.abspath(os.path.join(FLAGS.save_model_dir_name, "checkpoints"))
+
     if os.path.exists(FLAGS.save_model_dir_name):
         shutil.rmtree(FLAGS.save_model_dir_name)
-
-    checkpoint_dir = os.path.abspath(os.path.join(FLAGS.save_model_dir_name, "checkpoints"))
 
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
@@ -72,7 +72,7 @@ def main():
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
 
-    data_helper.pickle_models_to_disk()
+    data_helper.store_models_to_disk()
 
     trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data())
     trainer.train(training_params, model_params)

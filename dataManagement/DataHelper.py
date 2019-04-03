@@ -1,5 +1,4 @@
 import os
-import pickle
 
 from labelManagement.DatasetLabelEncoder import DatasetLabelEncoder
 from modelSaver.ModelPickler import ModelPickler
@@ -30,7 +29,7 @@ class DataHelper:
     def labels_to_one_hot(self, labels):
         return self.label_encoder.encode_to_one_hot(labels)
 
-    def pickle_models_to_disk(self):
+    def store_models_to_disk(self):
         self.model_pickler.pickle_models_to_disk(self.label_encoder, self.label_encoder_filename)
         self.model_pickler.pickle_models_to_disk(self.tokenizer, self.tokenizer_filename)
 
