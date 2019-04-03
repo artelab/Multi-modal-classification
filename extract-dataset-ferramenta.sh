@@ -13,7 +13,7 @@ python3 extract_encoded_images.py \
                  --train_path "${HOME}/datasets/ferramenta52-multimodal/train.csv"  \
                  --val_path "${HOME}/datasets/ferramenta52-multimodal/val.csv"  \
                  --output_dir "${HOME}/datasets/ferramenta52-multimodal/new_blank_encoding/${w}x${w}-${encoding_height}-sep${ste_separator_size}-spixel${ste_superpixel_size}" \
-                 --output_image_width $w \
+                 --output_image_width ${w} \
                  --encoding_height ${encoding_height} \
                  --save_model_dir_name "runs/ferramenta52-$w-$encoding_height" \
                  --gpu_id "" \
