@@ -35,7 +35,7 @@ tf.flags.DEFINE_string("val_path", "/home/superior/tmp/test-accuracy/test.csv",
                        "csv file containing text|class|image_path")
 tf.flags.DEFINE_string("save_model_dir_name", "/home/superior/tmp/test-accuracy/food101-100-10",
                        "dir used to save the model")
-tf.flags.DEFINE_string("output_dir", "/home/superior/tmp/new_encoding/100x100-10", "dir used to save the new dataset")
+tf.flags.DEFINE_string("output_dir", "/home/super/tmp/new_encoding/100x100-10", "dir used to save the new dataset")
 
 tf.flags.DEFINE_string("gpu_id", "", "ID of the GPU to be used")
 

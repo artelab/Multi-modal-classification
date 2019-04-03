@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import tensorflow as tf
 from tflearn.data_utils import pad_sequences
@@ -44,8 +45,16 @@ def main():
     output_image_width = FLAGS.output_image_width
     encoding_height = FLAGS.encoding_height
 
-    training_params = TrainingParameters(num_words_to_keep, output_image_width, encoding_height, FLAGS.dropout_keep_prob,
-                                    FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
+    if os.path.exists(FLAGS.save_model_dir_name):
+        shutil.rmtree(FLAGS.save_model_dir_name)
+
+    checkpoint_dir = os.path.abspath(os.path.join(FLAGS.save_model_dir_name, "checkpoints"))
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+
+    training_params = TrainingParameters(num_words_to_keep, output_image_width, encoding_height,
+                                         FLAGS.dropout_keep_prob,
+                                         FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
     model_params = ModelParameters(FLAGS.save_model_dir_name, FLAGS.num_epochs, FLAGS.patience, FLAGS.evaluate_every)
 
     data_helper = BestDataHelperEverCreated(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
@@ -61,9 +70,10 @@ def main():
     val_y = data_helper.labels_to_one_hot(val_data.get_labels())
 
     data_helper.train_tokenizer(training_data.get_texts())
-
     train_x = data_helper.texts_to_indices(training_data.get_texts())
     val_x = data_helper.texts_to_indices(val_data.get_texts())
+
+    data_helper.pickle_models_to_disk()
 
     train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
     val_x = pad_sequences(val_x, maxlen=num_words_x_doc, value=0.)
@@ -71,8 +81,8 @@ def main():
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
 
-    trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data(), training_params, model_params)
-    trainer.train()
+    trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data())
+    trainer.train(training_params, model_params)
 
 
 if __name__ == '__main__':

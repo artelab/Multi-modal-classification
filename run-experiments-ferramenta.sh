@@ -6,7 +6,7 @@ encoding_height=1
 
 echo "output_image_width $w"
 echo "encoding_height $encoding_height"
-python3 train.py --train_path "${HOME}/datasets/ferramenta52-multimodal/train.csv"  \
+python3 train_model.py --train_path "${HOME}/datasets/ferramenta52-multimodal/train.csv"  \
                  --val_path "${HOME}/datasets/ferramenta52-multimodal/val.csv"  \
                  --output_image_width $w \
                  --encoding_height ${encoding_height} \
