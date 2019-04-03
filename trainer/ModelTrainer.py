@@ -66,23 +66,8 @@ class ModelTrainer(object):
                     encoding_height=self.training_parameters.get_encoding_height(),
                     l2_reg_lambda=0.0)
 
-                x_train = self.train_dataset.get_texts()
-                y_train = self.train_dataset.get_labels()
-                img_train = self.train_dataset.get_images()
-
-                x_test = self.val_dataset.get_texts()
-                y_test = self.val_dataset.get_labels()
-                img_test = self.val_dataset.get_images()
-
-                dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train, img_train))
-                dataset = dataset.batch(self.training_parameters.get_batch_size())
-                train_iterator = dataset.make_initializable_iterator()
-                next_element = train_iterator.get_next()
-
-                test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test, img_test))
-                test_dataset = test_dataset.batch(self.training_parameters.get_batch_size())
-                test_iterator = test_dataset.make_initializable_iterator()
-                next_test_element = test_iterator.get_next()
+                train_iterator, next_train_element = self.initialize_iterator(self.train_dataset)
+                test_iterator, next_test_element = self.initialize_iterator(self.val_dataset)
 
                 global_step = tf.Variable(0, name="global_step", trainable=False)
                 optimizer = tf.train.AdamOptimizer(1e-3)
@@ -126,13 +111,14 @@ class ModelTrainer(object):
 
                 with open(os.path.join(out_dir, "results.txt"), "a") as resfile:
                     resfile.write("Model dir: {}\n".format(out_dir))
-                    resfile.write("Dataset: {}\n".format(img_train[0]))
+                    # TODO questo non mi piace, solo per un log
+                    resfile.write("Dataset: {}\n".format(self.train_dataset.get_images()[0]))
 
                 # Initialize all variables
                 sess.run(tf.global_variables_initializer())
 
-                train_length = len(x_train)
-                val_length = len(x_test)
+                train_length = len(self.train_dataset.get_texts())
+                val_length = len(self.val_dataset.get_texts())
 
                 for ep in range(self.model_parameters.get_no_of_epochs()):
                     print("***** Epoch " + str(ep) + " *****")
@@ -140,7 +126,7 @@ class ModelTrainer(object):
 
                     for b in range((train_length // self.training_parameters.get_batch_size()) + 1):
                         images_batch = []
-                        element = sess.run(next_element)
+                        element = sess.run(next_train_element)
 
                         path_list = [el.decode('UTF-8') for el in element[2]]
 
@@ -199,3 +185,14 @@ class ModelTrainer(object):
 
                             if patience == 0:
                                 return
+
+    def initialize_iterator(self, dataset_split):
+        texts = dataset_split.get_texts()
+        labels = dataset_split.get_labels()
+        images = dataset_split.get_images()
+
+        dataset = tf.data.Dataset.from_tensor_slices((texts, labels, images))
+        dataset = dataset.batch(self.training_parameters.get_batch_size())
+        iterator = dataset.make_initializable_iterator()
+        next_element = iterator.get_next()
+        return iterator, next_element
