@@ -11,33 +11,33 @@ from tflearn.data_utils import pad_sequences
 from dataManagement.DataHelper import DataHelper
 from dataManagement.DataLoader import DataLoader
 
-tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
-tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
-tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
-tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
-tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularization lambda (default: 0.0)")
+tf.flags.DEFINE_integer('embedding_dim', 128, 'Dimensionality of character embedding (default: 128)')
+tf.flags.DEFINE_string('filter_sizes', '3,4,5', 'Comma-separated filter sizes (default: \'3,4,5\')')
+tf.flags.DEFINE_integer('num_filters', 128, 'Number of filters per filter size (default: 128)')
+tf.flags.DEFINE_float('dropout_keep_prob', 0.5, 'Dropout keep probability (default: 0.5)')
+tf.flags.DEFINE_float('l2_reg_lambda', 0.0, 'L2 regularization lambda (default: 0.0)')
 
-tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
-tf.flags.DEFINE_integer("evaluate_every", 500, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
-tf.flags.DEFINE_integer("patience", 100, "Stop criteria (default: 100)")
-tf.flags.DEFINE_integer("output_image_width", 100, "Size of output Image plus embedding  (default: 100)")
-tf.flags.DEFINE_integer("encoding_height", 10, "Height of the output embedding  (default: 10)")
+tf.flags.DEFINE_integer('batch_size', 32, 'Batch Size (default: 64)')
+tf.flags.DEFINE_integer('num_epochs', 200, 'Number of training epochs (default: 200)')
+tf.flags.DEFINE_integer('evaluate_every', 500, 'Evaluate model on dev set after this many steps (default: 100)')
+tf.flags.DEFINE_integer('num_checkpoints', 5, 'Number of checkpoints to store (default: 5)')
+tf.flags.DEFINE_integer('patience', 100, 'Stop criteria (default: 100)')
+tf.flags.DEFINE_integer('output_image_width', 100, 'Size of output Image plus embedding  (default: 100)')
+tf.flags.DEFINE_integer('encoding_height', 10, 'Height of the output embedding  (default: 10)')
 
-tf.flags.DEFINE_integer("ste_image_w", 256, "width of the output image for embedding and image  (default: 256)")
-tf.flags.DEFINE_integer("ste_separator_size", 4, "blank space around the visual embedding (default: 4)")
-tf.flags.DEFINE_integer("ste_superpixel_size", 4, "size of the superpixel size (default: 4)")
+tf.flags.DEFINE_integer('ste_image_w', 256, 'width of the output image for embedding and image  (default: 256)')
+tf.flags.DEFINE_integer('ste_separator_size', 4, 'blank space around the visual embedding (default: 4)')
+tf.flags.DEFINE_integer('ste_superpixel_size', 4, 'size of the superpixel size (default: 4)')
 
-tf.flags.DEFINE_string("train_path", "/home/superior/tmp/test-accuracy/train.csv",
-                       "csv file containing text|class|image_path")
-tf.flags.DEFINE_string("val_path", "/home/superior/tmp/test-accuracy/test.csv",
-                       "csv file containing text|class|image_path")
-tf.flags.DEFINE_string("save_model_dir_name", "/home/superior/tmp/test-accuracy/food101-100-10",
-                       "dir used to save the model")
-tf.flags.DEFINE_string("output_dir", "/home/super/tmp/new_encoding/100x100-10", "dir used to save the new dataset")
+tf.flags.DEFINE_string('train_path', '/home/superior/tmp/test-accuracy/train.csv',
+                       'csv file containing text|class|image_path')
+tf.flags.DEFINE_string('val_path', '/home/superior/tmp/test-accuracy/test.csv',
+                       'csv file containing text|class|image_path')
+tf.flags.DEFINE_string('save_model_dir_name', '/home/superior/tmp/test-accuracy/food101-100-10',
+                       'dir used to save the model')
+tf.flags.DEFINE_string('output_dir', '/home/super/tmp/new_encoding/100x100-10', 'dir used to save the new dataset')
 
-tf.flags.DEFINE_string("gpu_id", "", "ID of the GPU to be used")
+tf.flags.DEFINE_string('gpu_id', '', 'ID of the GPU to be used')
 
 FLAGS = tf.flags.FLAGS
 
@@ -121,12 +121,12 @@ def write_to_disk(root_dir, img_sum, test_img, save_features=False):
         if save_features:
             type_dir = os.path.abspath(os.path.join(parent_dir, os.pardir))  # train or test
             type_dir_split = os.path.split(type_dir)
-            out_file_name = os.path.join(type_dir_split[0], type_dir_split[1] + ".csv")
+            out_file_name = os.path.join(type_dir_split[0], type_dir_split[1] + '.csv')
             text_encoding_crop = image[0:FLAGS.encoding_height, 0:FLAGS.output_image_width, :]
             text_encoding_crop = np.reshape(text_encoding_crop, (
                     FLAGS.output_image_width * FLAGS.encoding_height * 3))  # C-like index ordering
-            with open(out_file_name, "a") as myfile:
-                myfile.write("{};{}\n".format(path, np.array2string(text_encoding_crop, threshold=np.inf,
+            with open(out_file_name, 'a') as myfile:
+                myfile.write('{};{}\n'.format(path, np.array2string(text_encoding_crop, threshold=np.inf,
                                                                     max_line_width=np.inf, separator=',').replace('\n',
                                                                                                                   '')))
 
@@ -152,8 +152,8 @@ def main():
     train_length = len(open(train_path).readlines())
     val_length = len(open(val_path).readlines())
 
-    print("Train: " + str(train_length))
-    print("Val: " + str(val_length))
+    print('Train: ' + str(train_length))
+    print('Val: ' + str(val_length))
 
     data_loader = DataLoader()
     data_loader.load_data(train_path, val_path, delimiter='|')
@@ -171,16 +171,16 @@ def main():
     text_train = pad_sequences(text_train, maxlen=num_words_x_doc, value=0.)
     text_val = pad_sequences(text_val, maxlen=num_words_x_doc, value=0.)
 
-    print("\nEvaluating...\n")
-    checkpoint_dir = os.path.abspath(os.path.join(model_dir, "checkpoints"))
+    print('\nEvaluating...\n')
+    checkpoint_dir = os.path.abspath(os.path.join(model_dir, 'checkpoints'))
     checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
-    print("Loading latest checkpoint: {}".format(checkpoint_file))
+    print('Loading latest checkpoint: {}'.format(checkpoint_file))
     graph = tf.Graph()
     with graph.as_default():
         sess = tf.Session()
         with sess.as_default():
             # Load the saved meta graph and restore variables
-            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+            saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_file))
             saver.restore(sess, checkpoint_file)
 
             train_dataset = tf.data.Dataset.from_tensor_slices((text_train, label_train, (training_data.get_images())))
@@ -197,15 +197,15 @@ def main():
             sess.run(val_iterator.initializer)
 
             # Get the placeholders from the graph by name
-            input_x = graph.get_operation_by_name("input_x").outputs[0]
-            # input_y = graph.get_operation_by_name("input_y").outputs[0]
-            dropout_keep_prob = graph.get_operation_by_name("dropout_keep_prob").outputs[0]
-            input_mask = graph.get_operation_by_name("input_mask").outputs[0]
+            input_x = graph.get_operation_by_name('input_x').outputs[0]
+            # input_y = graph.get_operation_by_name('input_y').outputs[0]
+            dropout_keep_prob = graph.get_operation_by_name('dropout_keep_prob').outputs[0]
+            input_mask = graph.get_operation_by_name('input_mask').outputs[0]
 
             # Tensors we want to evaluate
-            input_y = graph.get_operation_by_name("input_y").outputs[0]
-            accuracy = graph.get_operation_by_name("accuracy/accuracy").outputs[0]
-            sum = graph.get_operation_by_name("sum").outputs[0]
+            input_y = graph.get_operation_by_name('input_y').outputs[0]
+            accuracy = graph.get_operation_by_name('accuracy/accuracy').outputs[0]
+            sum = graph.get_operation_by_name('sum').outputs[0]
 
             correct = 0
             for b in range((val_length // batch_size) + 1):
@@ -233,7 +233,7 @@ def main():
                 thread.start()
 
             test_accuracy = correct / val_length
-            print("Test accuracy: {}/{}={}".format(correct, val_length, test_accuracy))
+            print('Test accuracy: {}/{}={}'.format(correct, val_length, test_accuracy))
 
             correct = 0
             for b in range((train_length // batch_size) + 1):
@@ -261,7 +261,7 @@ def main():
                 thread.start()
 
             train_accuracy = correct / train_length
-            print("Train accuracy: " + str(train_accuracy))
+            print('Train accuracy: ' + str(train_accuracy))
 
 
 if __name__ == '__main__':

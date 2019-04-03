@@ -24,7 +24,7 @@ class DataLoader(object):
         val_labels = self.val.get_labels()
         val_images = self.val.get_images()
 
-        self.view.print_to_screen("Train/Dev split: {:d}/{:d}".format(len(train_texts), len(val_texts)))
+        self.view.print_to_screen('Train/Dev split: {:d}/{:d}'.format(len(train_texts), len(val_texts)))
 
         if shuffle_data:
             train_texts, train_labels, train_images = shuffle(train_texts, train_labels, train_images, random_state=10)
