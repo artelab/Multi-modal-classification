@@ -29,10 +29,10 @@ class DataLoader(object):
         if shuffle_data:
             train_texts, train_labels, train_images = shuffle(train_texts, train_labels, train_images, random_state=10)
 
-        self.set_training_data(train_images, train_labels, train_texts)
-        self.set_val_data(val_images, val_labels, val_texts)
+        self.set_training_data(train_texts, train_labels, train_images)
+        self.set_val_data(val_texts, val_labels, val_images)
 
-    def set_val_data(self, val_images, val_labels, val_texts):
+    def set_val_data(self, val_texts, val_labels, val_images):
         self.val.set_texts(val_texts)
         self.val.set_labels(val_labels)
         self.val.set_images(val_images)

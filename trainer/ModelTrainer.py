@@ -1,8 +1,8 @@
-import cv2
 import datetime
 import os
 import shutil
 
+import cv2
 import tensorflow as tf
 
 from TextImgCNN import TextImgCNN
@@ -10,10 +10,11 @@ from TextImgCNN import TextImgCNN
 
 class ModelTrainer(object):
 
-    def __init__(self, train_dataset, val_dataset, params):
+    def __init__(self, train_dataset, val_dataset, training_parameters, model_parameters):
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
-        self.parameters = params
+        self.training_parameters = training_parameters
+        self.model_parameters = model_parameters
 
     def train(self):
         def train_step(x_batch, y_batch, images_batch):
@@ -24,7 +25,7 @@ class ModelTrainer(object):
                 cnn.input_x: x_batch,
                 cnn.input_y: y_batch,
                 cnn.input_mask: images_batch,
-                cnn.dropout_keep_prob: self.parameters.dropout_keep_prob
+                cnn.dropout_keep_prob: self.training_parameters.get_dropout_keep_probability()
             }
             _, step, summaries, loss, accuracy = sess.run(
                 [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
@@ -47,30 +48,39 @@ class ModelTrainer(object):
             return accuracy
 
         best_accuracy = 0
-        patience = self.parameters.get_patience()
+        patience = self.model_parameters.get_patience()
 
         with tf.Graph().as_default():
             sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
             with sess.as_default():
+                output_width = self.training_parameters.get_output_image_width()
 
                 cnn = TextImgCNN(
                     sequence_length=self.train_dataset.get_texts().shape[1],
                     num_classes=self.train_dataset.get_labels().shape[1],
-                    vocab_size=self.parameters.get_no_of_words_to_keep(),
-                    embedding_size=self.parameters.get_embedding_dim(),
-                    filter_sizes=list(map(int, self.parameters.get_filter_sizes().split(","))),
-                    num_filters=self.parameters.get_num_filters(),
-                    output_image_width=self.parameters.get_output_image_width(),
-                    encoding_height=self.parameters.get_encoding_height(),
+                    vocab_size=self.training_parameters.get_no_of_words_to_keep(),
+                    embedding_size=self.training_parameters.get_embedding_dim(),
+                    filter_sizes=list(map(int, self.training_parameters.get_filter_sizes().split(","))),
+                    num_filters=self.training_parameters.get_num_filters(),
+                    output_image_width=output_width,
+                    encoding_height=self.training_parameters.get_encoding_height(),
                     l2_reg_lambda=0.0)
 
+                x_train = self.train_dataset.get_texts()
+                y_train = self.train_dataset.get_labels()
+                img_train = self.train_dataset.get_images()
+
+                x_test = self.val_dataset.get_texts()
+                y_test = self.val_dataset.get_labels()
+                img_test = self.val_dataset.get_images()
+
                 dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train, img_train))
-                dataset = dataset.batch(self.parameters.get_batch_size())
+                dataset = dataset.batch(self.training_parameters.get_batch_size())
                 train_iterator = dataset.make_initializable_iterator()
                 next_element = train_iterator.get_next()
 
                 test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test, img_test))
-                test_dataset = test_dataset.batch(self.parameters.get_batch_size())
+                test_dataset = test_dataset.batch(self.training_parameters.get_batch_size())
                 test_iterator = test_dataset.make_initializable_iterator()
                 next_test_element = test_iterator.get_next()
 
@@ -89,7 +99,7 @@ class ModelTrainer(object):
                         grad_summaries.append(sparsity_summary)
                 grad_summaries_merged = tf.summary.merge(grad_summaries)
 
-                out_dir = FLAGS.save_model_dir_name
+                out_dir = self.model_parameters.get_model_directory()
                 if os.path.exists(out_dir):
                     shutil.rmtree(out_dir)
 
@@ -124,11 +134,11 @@ class ModelTrainer(object):
                 train_length = len(x_train)
                 val_length = len(x_test)
 
-                for ep in range(FLAGS.num_epochs):
+                for ep in range(self.model_parameters.get_no_of_epochs()):
                     print("***** Epoch " + str(ep) + " *****")
                     sess.run(train_iterator.initializer)
 
-                    for b in range((train_length // self.parameters.get_batch_size()) + 1):
+                    for b in range((train_length // self.training_parameters.get_batch_size()) + 1):
                         images_batch = []
                         element = sess.run(next_element)
 
@@ -136,22 +146,22 @@ class ModelTrainer(object):
 
                         for path in path_list:
                             img = cv2.imread(path)
-                            img = cv2.resize(img, (self.parameters.get_output_image_width(), self.parameters.get_output_image_width()))
+                            img = cv2.resize(img, (output_width, output_width))
                             img = img / 255
                             images_batch.append(img)
 
                         train_step(element[0], element[1], images_batch)
 
                         current_step = tf.train.global_step(sess, global_step)
-                        if current_step % FLAGS.evaluate_every == 0:
+                        if current_step % self.model_parameters.evaluate_every == 0:
                             sess.run(test_iterator.initializer)
 
-                        if current_step % FLAGS.evaluate_every == 0:
+                        if current_step % self.model_parameters.evaluate_every == 0:
                             print("\nEvaluation:")
                             # Run one pass over the validation dataset.
                             sess.run(test_iterator.initializer)
                             correct = 0
-                            for b in range((val_length // self.parameters.get_batch_size()) + 1):
+                            for b in range((val_length // self.training_parameters.get_batch_size()) + 1):
                                 test_img_batch = []
                                 test_element = sess.run(next_test_element)
 
@@ -160,8 +170,8 @@ class ModelTrainer(object):
                                 for path in test_path_list:
                                     img = cv2.imread(path)
                                     img = cv2.resize(img,
-                                                     (self.parameters.get_output_image_width(),
-                                                      self.parameters.get_output_image_width()))
+                                                     (output_width,
+                                                      output_width))
                                     img = img / 255
                                     test_img_batch.append(img)
 
@@ -174,7 +184,7 @@ class ModelTrainer(object):
 
                             if test_accuracy > best_accuracy:
                                 best_accuracy = test_accuracy
-                                patience = self.parameters.get_patience()
+                                patience = self.model_parameters.get_patience()
                                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                                 print("Saved model checkpoint to {}\n".format(path))
                             else:

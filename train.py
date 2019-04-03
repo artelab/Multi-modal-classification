@@ -5,6 +5,7 @@ from tflearn.data_utils import pad_sequences
 
 from BestDataHelperEverCreated import BestDataHelperEverCreated
 from dataManagement.DataLoader import DataLoader
+from parameterManager.ModelParameters import ModelParameters
 from parameterManager.TrainingParameters import TrainingParameters
 from trainer.ModelTrainer import ModelTrainer
 
@@ -22,14 +23,14 @@ tf.flags.DEFINE_integer("patience", 100, "Stop criteria (default: 100)")
 tf.flags.DEFINE_integer("output_image_width", 100, "Size of output Image plus embedding  (default: 100)")
 tf.flags.DEFINE_integer("encoding_height", 10, "Height of the output embedding  (default: 10)")
 
-tf.flags.DEFINE_string("train_path", "/home/superior/tmp/test-accuracy/train.csv",
+tf.flags.DEFINE_string("train_path", "/home/super/datasets/ferramenta52-multimodal/train.csv",
                        "csv file containing text|class|image_path")
-tf.flags.DEFINE_string("val_path", "/home/superior/tmp/test-accuracy/test.csv",
+tf.flags.DEFINE_string("val_path", "/home/super/datasets/ferramenta52-multimodal/val.csv",
                        "csv file containing text|class|image_path")
-tf.flags.DEFINE_string("save_model_dir_name", "/home/superior/tmp/test-accuracy/food101-100-10",
+tf.flags.DEFINE_string("save_model_dir_name", "runs/ferramenta52-10-1",
                        "dir used to save the model")
 
-tf.flags.DEFINE_string("gpu_id", "0", "ID of the GPU to be used")
+tf.flags.DEFINE_string("gpu_id", "0,1,2", "ID of the GPU to be used")
 
 FLAGS = tf.flags.FLAGS
 
@@ -43,11 +44,11 @@ def main():
     output_image_width = FLAGS.output_image_width
     encoding_height = FLAGS.encoding_height
 
-    parameters = TrainingParameters(num_words_to_keep, output_image_width, encoding_height, FLAGS.patience,
-                                    FLAGS.dropout_keep_prob, FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes,
-                                    FLAGS.num_filters)
+    training_params = TrainingParameters(num_words_to_keep, output_image_width, encoding_height, FLAGS.dropout_keep_prob,
+                                    FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
+    model_params = ModelParameters(FLAGS.save_model_dir_name, FLAGS.num_epochs, FLAGS.patience, FLAGS.evaluate_every)
 
-    data_helper = BestDataHelperEverCreated(parameters.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
+    data_helper = BestDataHelperEverCreated(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
 
     data_loader = DataLoader()
     data_loader.load_data(FLAGS.train_path, FLAGS.val_path, delimiter='|', shuffle_data=True)
@@ -70,7 +71,7 @@ def main():
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
 
-    trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data(), parameters)
+    trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data(), training_params, model_params)
     trainer.train()
 
 
