@@ -57,7 +57,6 @@ def main():
                                          FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
     model_params = ModelParameters(FLAGS.save_model_dir_name, FLAGS.num_epochs, FLAGS.patience, FLAGS.evaluate_every)
 
-
     data_loader = DataLoader()
     data_loader.load_data(FLAGS.train_path, FLAGS.val_path, delimiter='|', shuffle_data=True)
 

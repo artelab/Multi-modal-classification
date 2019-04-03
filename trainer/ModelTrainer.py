@@ -1,13 +1,15 @@
 import os
 
-import cv2
 import tensorflow as tf
 
+from accuracy.Accuracy import Accuracy
+from imageManipulation.ImageManipulation import ImageManipulator
 from logger.FileLogger import FileLogger
 from model.TextImgCNN import TextImgCNN
 from patience.Patience import Patience
 from result.PartialResult import PartialResult
 from result.TrainingResult import TrainingResult
+from tensorflowWrapper.CustomIterator import CustomIterator
 from view.View import View
 
 
@@ -21,12 +23,15 @@ class ModelTrainer(object):
     def train(self, training_params, model_params):
 
         patience = Patience(model_params.get_patience())
-        best_accuracy = 0
+        best_accuracy = Accuracy(0)
+
+        output_width = training_params.get_output_image_width()
+
+        image_resizer = ImageManipulator(output_width)
 
         with tf.Graph().as_default():
             sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
             with sess.as_default():
-                output_width = training_params.get_output_image_width()
 
                 cnn = TextImgCNN(
                     sequence_length=self.train_dataset.get_texts().shape[1],
@@ -39,10 +44,10 @@ class ModelTrainer(object):
                     encoding_height=training_params.get_encoding_height(),
                     l2_reg_lambda=0.0)
 
-                train_iterator, next_train_batch = self.init_iterator(self.train_dataset,
-                                                                      training_params.get_batch_size())
-                test_iterator, next_test_element = self.init_iterator(self.val_dataset,
-                                                                      training_params.get_batch_size())
+                train_iterator, next_train_batch = CustomIterator.create_iterator(self.train_dataset,
+                                                                                  training_params.get_batch_size())
+                test_iterator, next_test_element = CustomIterator.create_iterator(self.val_dataset,
+                                                                                  training_params.get_batch_size())
 
                 global_step = tf.Variable(0, name='global_step', trainable=False)
                 optimizer = tf.train.AdamOptimizer(1e-3)
@@ -92,20 +97,20 @@ class ModelTrainer(object):
                     for i in range(no_of_training_batches):
                         train_batch = sess.run(next_train_batch)
 
-                        train_images_batch = self.preprocess_images(output_width, train_batch[2])
+                        train_images_batch = image_resizer.preprocess_images(train_batch[2])
 
-                        feed_dict = self.create_feed_dict(cnn, train_batch, train_images_batch, training_params.get_dropout_keep_probability())
+                        feed_dict = self.create_feed_dict(cnn, train_batch, train_images_batch,
+                                                          training_params.get_dropout_keep_probability())
 
                         _, step, summaries, loss, accuracy = sess.run(
                             [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy], feed_dict)
 
                         train_summary_writer.add_summary(summaries, step)
+                        current_step = tf.train.global_step(sess, global_step)
 
                         training_result = TrainingResult(step, loss, accuracy)
 
                         self.view.print_to_screen(str(training_result))
-
-                        current_step = tf.train.global_step(sess, global_step)
 
                         if current_step % model_params.evaluate_every == 0:
                             self.view.print_to_screen('Evaluation:')
@@ -118,7 +123,7 @@ class ModelTrainer(object):
 
                             for i in range(no_of_val_batches):
                                 test_batch = sess.run(next_test_element)
-                                test_images_batch = self.preprocess_images(output_width, test_batch[2])
+                                test_images_batch = image_resizer.preprocess_images(test_batch[2])
 
                                 feed_dict = self.create_feed_dict(cnn, test_batch, test_images_batch, 1)
 
@@ -127,24 +132,25 @@ class ModelTrainer(object):
 
                                 correct += accuracy * len(test_images_batch)
 
-                            test_accuracy = correct / val_length
+                            test_accuracy = Accuracy(correct / val_length)
+
+                            partial_result = PartialResult(epoch, current_step, test_accuracy, best_accuracy, patience)
+                            self.view.print_to_screen(str(partial_result))
+                            file_logger.write_partial_result_to_file(partial_result)
 
                             if test_accuracy > best_accuracy:
-                                best_accuracy = test_accuracy
+                                best_accuracy.set_value(test_accuracy.get_value())
                                 patience.reset_patience()
                                 path = self.store_model(model_params, current_step, sess, saver)
                                 self.view.print_to_screen('Saved model checkpoint to {}\n'.format(path))
                             else:
                                 patience.decrement_patience()
 
-                            partial_result = PartialResult(epoch, current_step, test_accuracy, best_accuracy, patience)
-                            self.view.print_to_screen(str(partial_result))
-                            file_logger.write_partial_result_to_file(partial_result)
-
                         if patience.is_zero():
                             return
 
-    def create_feed_dict(self, cnn, train_batch, train_images_batch, dropout_keep_prob):
+    @staticmethod
+    def create_feed_dict(cnn, train_batch, train_images_batch, dropout_keep_prob):
         feed_dict = {
             cnn.input_x: train_batch[0],
             cnn.input_y: train_batch[1],
@@ -152,29 +158,6 @@ class ModelTrainer(object):
             cnn.dropout_keep_prob: dropout_keep_prob
         }
         return feed_dict
-
-    @staticmethod
-    def preprocess_images(output_width, images_batch):
-        images_list = []
-        path_list = [el.decode('UTF-8') for el in images_batch]
-        for path in path_list:
-            img = cv2.imread(path)
-            img = cv2.resize(img, (output_width, output_width))
-            img = img / 255
-            images_list.append(img)
-        return images_list
-
-    @staticmethod
-    def init_iterator(dataset_split, batch_size):
-        texts = dataset_split.get_texts()
-        labels = dataset_split.get_labels()
-        images = dataset_split.get_images()
-
-        dataset = tf.data.Dataset.from_tensor_slices((texts, labels, images))
-        dataset = dataset.batch(batch_size)
-        iterator = dataset.make_initializable_iterator()
-        next_element = iterator.get_next()
-        return iterator, next_element
 
     @staticmethod
     def store_model(model_params, current_step, sess, saver):
