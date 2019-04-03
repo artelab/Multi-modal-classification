@@ -2,7 +2,6 @@ import os
 import shutil
 
 import tensorflow as tf
-from tflearn.data_utils import pad_sequences
 
 from dataManagement.DataHelper import DataHelper
 from dataManagement.DataLoader import DataLoader
@@ -58,7 +57,6 @@ def main():
                                          FLAGS.embedding_dim, FLAGS.batch_size, FLAGS.filter_sizes, FLAGS.num_filters)
     model_params = ModelParameters(FLAGS.save_model_dir_name, FLAGS.num_epochs, FLAGS.patience, FLAGS.evaluate_every)
 
-    data_helper = DataHelper(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
 
     data_loader = DataLoader()
     data_loader.load_data(FLAGS.train_path, FLAGS.val_path, delimiter='|', shuffle_data=True)
@@ -66,37 +64,17 @@ def main():
     training_data = data_loader.get_training_data()
     val_data = data_loader.get_val_data()
 
-    train_y, val_y = preprocess_labels(data_helper, training_data, val_data)
-    train_x, val_x = preprocess_texts(data_helper, training_data, val_data, num_words_x_doc)
+    data_helper = DataHelper(training_params.get_no_of_words_to_keep(), FLAGS.save_model_dir_name)
+    train_y, val_y = data_helper.preprocess_labels(training_data, val_data)
+    train_x, val_x = data_helper.preprocess_texts(training_data, val_data, num_words_x_doc)
 
     data_loader.set_training_data(train_x, train_y, training_data.get_images())
     data_loader.set_val_data(val_x, val_y, val_data.get_images())
 
-    data_helper.store_models_to_disk()
+    data_helper.store_preprocessors_to_disk()
 
     trainer = ModelTrainer(data_loader.get_training_data(), data_loader.get_val_data())
     trainer.train(training_params, model_params)
-
-
-def preprocess_labels(data_helper, training_data, val_data):
-    data_helper.train_one_hot_encoder(training_data.get_labels())
-
-    train_y = data_helper.labels_to_one_hot(training_data.get_labels())
-    val_y = data_helper.labels_to_one_hot(val_data.get_labels())
-
-    return train_y, val_y
-
-
-def preprocess_texts(data_helper, training_data, val_data, num_words_x_doc):
-    data_helper.train_tokenizer(training_data.get_texts())
-
-    train_x = data_helper.texts_to_indices(training_data.get_texts())
-    train_x = pad_sequences(train_x, maxlen=num_words_x_doc, value=0.)
-
-    val_x = data_helper.texts_to_indices(val_data.get_texts())
-    val_x = pad_sequences(val_x, maxlen=num_words_x_doc, value=0.)
-
-    return train_x, val_x
 
 
 if __name__ == '__main__':
