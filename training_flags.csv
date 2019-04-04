@@ -1,9 +1,11 @@
+num_words_x_doc;100;int
+num_words_to_keep;30000;int
 embedding_dim;128;int
 filter_sizes;3,4,5;str
 num_filters;128;int
 dropout_keep_prob;0.5;float
 l2_reg_lambda;0.0;float
-batch_size;32;int
+batch_size;64;int
 num_epochs;200;int
 evaluate_every;500;int
 num_checkpoints;1;int
@@ -13,4 +15,4 @@ encoding_height;10;int
 train_path;/home/super/datasets/ferramenta52-multimodal/train.csv;str
 val_path;/home/super/datasets/ferramenta52-multimodal/val.csv;str
 save_model_dir_name;runs/ferramenta52-10-1;str
-gpu_id;0;1;str
+gpu_id;0,1,2;str
