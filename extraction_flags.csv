@@ -1,0 +1,13 @@
+num_words_to_keep;30000;int
+num_words_x_doc;100;int
+output_image_width;100;int
+encoding_height;1;int
+save_model_dir_name;runs/ferramenta52-10-1;str
+gpu_id;;str
+batch_size;64;int
+ste_image_w;227;int
+ste_separator_size;4;int
+ste_superpixel_size;3;int
+train_path;/home/super/datasets/ferramenta52-multimodal/train.csv;str
+val_path;/home/super/datasets/ferramenta52-multimodal/val.csv;str
+output_dir;/home/super/datasets/ferramenta52-multimodal/new_blank_encoding/output;str

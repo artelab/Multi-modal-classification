@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-patience=20
 w=10 # embedding width
 encoding_height=1 # embedding height
 ste_image_w=227

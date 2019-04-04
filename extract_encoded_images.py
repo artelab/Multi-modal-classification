@@ -29,13 +29,13 @@ tf.flags.DEFINE_integer('ste_image_w', 256, 'width of the output image for embed
 tf.flags.DEFINE_integer('ste_separator_size', 4, 'blank space around the visual embedding (default: 4)')
 tf.flags.DEFINE_integer('ste_superpixel_size', 4, 'size of the superpixel size (default: 4)')
 
-tf.flags.DEFINE_string('train_path', '/home/superior/tmp/test-accuracy/train.csv',
+tf.flags.DEFINE_string('train_path', '/home/super/datasets/ferramenta52-multimodal/train.csv',
                        'csv file containing text|class|image_path')
-tf.flags.DEFINE_string('val_path', '/home/superior/tmp/test-accuracy/test.csv',
+tf.flags.DEFINE_string('val_path', '/home/super/datasets/ferramenta52-multimodal/val.csv',
                        'csv file containing text|class|image_path')
-tf.flags.DEFINE_string('save_model_dir_name', '/home/superior/tmp/test-accuracy/food101-100-10',
+tf.flags.DEFINE_string('save_model_dir_name', 'runs/ferramenta52-10-1',
                        'dir used to save the model')
-tf.flags.DEFINE_string('output_dir', '/home/super/tmp/new_encoding/100x100-10', 'dir used to save the new dataset')
+tf.flags.DEFINE_string('output_dir', '/home/super/datasets/ferramenta52-multimodal/new_blank_encoding/output', 'dir used to save the new dataset')
 
 tf.flags.DEFINE_string('gpu_id', '', 'ID of the GPU to be used')
 
@@ -162,14 +162,16 @@ def main():
     val_data = data_loader.get_val_data()
 
     data_helper.load_from_pickles()
-    label_train = data_helper.labels_to_one_hot(training_data.get_labels())
-    label_val = data_helper.labels_to_one_hot(val_data.get_labels())
+    label_train, label_val = data_helper.preprocess_labels(training_data, val_data)
+    # label_train = data_helper.labels_to_one_hot(training_data.get_labels())
+    # label_val = data_helper.labels_to_one_hot(val_data.get_labels())
 
-    text_train = data_helper.texts_to_indices(training_data.get_texts())
-    text_val = data_helper.texts_to_indices(val_data.get_texts())
-
-    text_train = pad_sequences(text_train, maxlen=num_words_x_doc, value=0.)
-    text_val = pad_sequences(text_val, maxlen=num_words_x_doc, value=0.)
+    text_train, text_val = data_helper.preprocess_texts(training_data, val_data, num_words_x_doc)
+    # text_train = data_helper.texts_to_indices(training_data.get_texts())
+    # text_val = data_helper.texts_to_indices(val_data.get_texts())
+    #
+    # text_train = pad_sequences(text_train, maxlen=num_words_x_doc, value=0.)
+    # text_val = pad_sequences(text_val, maxlen=num_words_x_doc, value=0.)
 
     print('\nEvaluating...\n')
     checkpoint_dir = os.path.abspath(os.path.join(model_dir, 'checkpoints'))
