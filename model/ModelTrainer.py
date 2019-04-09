@@ -104,7 +104,7 @@ class ModelTrainer(object):
                         train_images_batch = image_resizer.preprocess_images(train_batch[2])
 
                         feed_dict = FeedDictCreator.create_feed_dict(input_tensor, train_batch, train_images_batch,
-                                                          training_params.get_dropout_keep_probability())
+                                                                     training_params.get_dropout_keep_probability())
 
                         _, step, summaries, loss, accuracy = sess.run(
                             [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy], feed_dict)

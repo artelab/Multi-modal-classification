@@ -32,12 +32,6 @@ def main(args):
     if os.path.exists(root_dir):
         shutil.rmtree(root_dir)
 
-    train_length = len(open(train_path).readlines())
-    val_length = len(open(val_path).readlines())
-
-    print('Train: ' + str(train_length))
-    print('Val: ' + str(val_length))
-
     data_loader = DataLoader()
     data_loader.load_data(train_path, val_path, delimiter='|')
 
