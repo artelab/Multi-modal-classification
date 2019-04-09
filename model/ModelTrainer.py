@@ -10,6 +10,8 @@ from patience.Patience import Patience
 from result.PartialResult import PartialResult
 from result.TrainingResult import TrainingResult
 from tensorflowWrapper.CustomIterator import CustomIterator
+from tensorflowWrapper.FeedDictCreator import FeedDictCreator
+from tensorflowWrapper.ModelTensor import ModelTensor
 from view.View import View
 
 
@@ -91,6 +93,8 @@ class ModelTrainer(object):
 
                 no_of_training_batches = (train_length // training_params.get_batch_size()) + 1
 
+                input_tensor = ModelTensor(cnn.input_x, cnn.input_y, cnn.input_mask, cnn.dropout_keep_prob)
+
                 for epoch in range(model_params.get_no_of_epochs()):
                     sess.run(train_iterator.initializer)
 
@@ -99,7 +103,7 @@ class ModelTrainer(object):
 
                         train_images_batch = image_resizer.preprocess_images(train_batch[2])
 
-                        feed_dict = self.create_feed_dict(cnn, train_batch, train_images_batch,
+                        feed_dict = FeedDictCreator.create_feed_dict(input_tensor, train_batch, train_images_batch,
                                                           training_params.get_dropout_keep_probability())
 
                         _, step, summaries, loss, accuracy = sess.run(
@@ -125,7 +129,8 @@ class ModelTrainer(object):
                                 test_batch = sess.run(next_test_element)
                                 test_images_batch = image_resizer.preprocess_images(test_batch[2])
 
-                                feed_dict = self.create_feed_dict(cnn, test_batch, test_images_batch, 1)
+                                feed_dict = FeedDictCreator.create_feed_dict(input_tensor, test_batch,
+                                                                             test_images_batch, 1)
 
                                 step, summaries, loss, accuracy = sess.run(
                                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy], feed_dict)
@@ -149,15 +154,15 @@ class ModelTrainer(object):
                         if patience.is_zero():
                             return
 
-    @staticmethod
-    def create_feed_dict(cnn, train_batch, train_images_batch, dropout_keep_prob):
-        feed_dict = {
-            cnn.input_x: train_batch[0],
-            cnn.input_y: train_batch[1],
-            cnn.input_mask: train_images_batch,
-            cnn.dropout_keep_prob: dropout_keep_prob
-        }
-        return feed_dict
+    # @staticmethod
+    # def create_feed_dict(cnn, train_batch, train_images_batch, dropout_keep_prob):
+    #     feed_dict = {
+    #         cnn.input_x: train_batch[0],
+    #         cnn.input_y: train_batch[1],
+    #         cnn.input_mask: train_images_batch,
+    #         cnn.dropout_keep_prob: dropout_keep_prob
+    #     }
+    #     return feed_dict
 
     @staticmethod
     def store_model(model_params, current_step, sess, saver):

@@ -51,8 +51,8 @@ def main(args):
     data_loader.set_training_data(text_train, label_train, training_data.get_images())
     data_loader.set_val_data(text_val, label_val, val_data.get_images())
 
-    encoding_extractor = EncodingExtractor(training_data, val_data)
-    encoding_extractor.extract(extraction_parameters, model_dir, root_dir)
+    encoding_extractor = EncodingExtractor(training_data, val_data, root_dir, model_dir)
+    encoding_extractor.extract(extraction_parameters)
 
 
 if __name__ == '__main__':

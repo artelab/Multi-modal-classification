@@ -1,58 +1,52 @@
-import numpy as np
 import os
 from threading import Thread
 
 import cv2
+import numpy as np
 import tensorflow as tf
 
+from imageManipulation.ImageManipulation import ImageManipulator
+from tensorflowWrapper.CustomIterator import CustomIterator
+from tensorflowWrapper.FeedDictCreator import FeedDictCreator
+from tensorflowWrapper.ModelTensor import ModelTensor
 from view.View import View
 
 
 class EncodingExtractor(object):
 
-    def __init__(self, train_dataset, val_dataset):
+    def __init__(self, train_dataset, val_dataset, root_dir, model_dir):
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
+        self.root_dir = root_dir
+        self.model_dir = model_dir
         self.view = View()
 
-    def extract(self, extraction_parameters, model_dir, root_dir):
-        self.view.print_to_screen('Evaluating...')
-        checkpoint_dir = os.path.abspath(os.path.join(model_dir, 'checkpoints'))
+    def extract(self, extraction_parameters):
+        checkpoint_dir = os.path.abspath(os.path.join(self.model_dir, 'checkpoints'))
         checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
-        self.view.print_to_screen('Loading latest checkpoint: {}'.format(checkpoint_file))
+        batch_size = extraction_parameters.get_batch_size()
+
+        image_resizer = ImageManipulator(extraction_parameters.get_output_image_width())
+
+        val_length = len(self.val_dataset.get_texts())
+        no_of_val_batches = (val_length // batch_size) + 1
+
         graph = tf.Graph()
         with graph.as_default():
             sess = tf.Session()
             with sess.as_default():
-                # Load the saved meta graph and restore variables
+                self.view.print_to_screen('Loading latest checkpoint: {}'.format(checkpoint_file))
                 saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_file))
                 saver.restore(sess, checkpoint_file)
 
-                text_train = self.train_dataset.get_texts()
-                label_train = self.train_dataset.get_labels()
-                images_train = self.train_dataset.get_images()
-
-                train_dataset = tf.data.Dataset.from_tensor_slices(
-                    (text_train, label_train, images_train))
-                train_dataset = train_dataset.batch(extraction_parameters.get_batch_size())
-                train_iterator = train_dataset.make_initializable_iterator()
-                train_next_element = train_iterator.get_next()
-
-                text_val = self.val_dataset.get_texts()
-                label_val = self.val_dataset.get_labels()
-                images_train = self.val_dataset.get_images()
-
-                val_dataset = tf.data.Dataset.from_tensor_slices((text_val, label_val, images_train))
-                val_dataset = val_dataset.batch(extraction_parameters.get_batch_size())
-                val_iterator = val_dataset.make_initializable_iterator()
-                val_next_element = val_iterator.get_next()
+                train_iterator, train_next_element = CustomIterator.create_iterator(self.train_dataset, batch_size)
+                val_iterator, val_next_element = CustomIterator.create_iterator(self.val_dataset, batch_size)
 
                 sess.run(train_iterator.initializer)
                 sess.run(val_iterator.initializer)
 
                 # Get the placeholders from the graph by name
                 input_x = graph.get_operation_by_name('input_x').outputs[0]
-                # input_y = graph.get_operation_by_name('input_y').outputs[0]
                 dropout_keep_prob = graph.get_operation_by_name('dropout_keep_prob').outputs[0]
                 input_mask = graph.get_operation_by_name('input_mask').outputs[0]
 
@@ -61,62 +55,42 @@ class EncodingExtractor(object):
                 accuracy = graph.get_operation_by_name('accuracy/accuracy').outputs[0]
                 sum = graph.get_operation_by_name('sum').outputs[0]
 
-                image_size = extraction_parameters.get_output_image_width()
+                input_tensor = ModelTensor(input_x, input_y, input_mask, dropout_keep_prob)
 
                 correct = 0
-                val_length = len(text_val)
-                for b in range((val_length // extraction_parameters.get_batch_size()) + 1):
-                    images = []
-                    element = sess.run(val_next_element)
-                    path_list = [el.decode('UTF-8') for el in element[2]]
+                for b in range(no_of_val_batches):
+                    val_batch = sess.run(val_next_element)
+                    path_list = [el.decode('UTF-8') for el in val_batch[2]]
 
-                    for path in path_list:
-                        img = cv2.imread(path)
-                        img = cv2.resize(img, (image_size, image_size))
-                        img = img / 255
-                        images.append(img)
+                    test_images_batch = image_resizer.preprocess_images(val_batch[2])
+                    feed_dict = FeedDictCreator.create_feed_dict(input_tensor, val_batch, test_images_batch, 1)
 
-                    feed_dict = {
-                        input_x: element[0],
-                        input_y: element[1],
-                        input_mask: images,
-                        dropout_keep_prob: 1.0
-                    }
                     acc, img_sum = sess.run([accuracy, sum], feed_dict)
 
                     correct += acc * len(path_list)  # batch_size
                     thread = Thread(target=self.embedding_to_image,
-                                    args=(root_dir, img_sum, path_list, extraction_parameters))
+                                    args=(self.root_dir, img_sum, path_list, extraction_parameters))
                     thread.start()
 
                 test_accuracy = correct / val_length
-                self.view.print_to_screen('Test accuracy: {}/{}={}'.format(int(correct), val_length, test_accuracy))
+                self.view.print_to_screen('Test accuracy: {} / {} = {}'.format(int(correct), val_length, test_accuracy))
+
+                train_length = len(self.train_dataset.get_texts())
+                no_of_train_batches = (train_length // batch_size) + 1
 
                 correct = 0
-                train_length = len(text_train)
-                for b in range((train_length // extraction_parameters.get_batch_size()) + 1):
-                    images = []
-                    element = sess.run(train_next_element)
-                    path_list = [el.decode('UTF-8') for el in element[2]]
+                for b in range(no_of_train_batches):
+                    train_batch = sess.run(train_next_element)
+                    path_list = [el.decode('UTF-8') for el in train_batch[2]]
 
-                    for path in path_list:
-                        img = cv2.imread(path)
-                        img = cv2.resize(img, (image_size, image_size))
-                        img = img / 255
-                        images.append(img)
+                    train_images_batch = image_resizer.preprocess_images(train_batch[2])
+                    feed_dict = FeedDictCreator.create_feed_dict(input_tensor, train_batch, train_images_batch, 1)
 
-                    feed_dict = {
-                        input_x: element[0],
-                        input_y: element[1],
-                        input_mask: images,
-                        dropout_keep_prob: 1.0
-                    }
                     acc, img_sum = sess.run([accuracy, sum], feed_dict)
 
                     correct += acc * len(path_list)  # batch_size
-
                     thread = Thread(target=self.embedding_to_image,
-                                    args=(root_dir, img_sum, path_list, extraction_parameters))
+                                    args=(self.root_dir, img_sum, path_list, extraction_parameters))
                     thread.start()
 
                 train_accuracy = correct / train_length
