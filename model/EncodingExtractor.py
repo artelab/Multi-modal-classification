@@ -58,7 +58,7 @@ class EncodingExtractor(object):
                 input_tensor = ModelTensor(input_x, input_y, input_mask, dropout_keep_prob)
 
                 correct = 0
-                for b in range(no_of_val_batches):
+                for i in range(no_of_val_batches):
                     val_batch = sess.run(val_next_element)
                     path_list = [el.decode('UTF-8') for el in val_batch[2]]
 
@@ -67,19 +67,18 @@ class EncodingExtractor(object):
 
                     acc, img_sum = sess.run([accuracy, sum], feed_dict)
 
-                    correct += acc * len(path_list)  # batch_size
+                    correct += acc * batch_size
                     thread = Thread(target=self.embedding_to_image,
                                     args=(self.root_dir, img_sum, path_list, extraction_parameters))
                     thread.start()
 
-                test_accuracy = correct / val_length
-                self.view.print_to_screen('Test accuracy: {} / {} = {}'.format(int(correct), val_length, test_accuracy))
+                self.compute_and_print_accuracy(correct, val_length, 'Test')
 
                 train_length = len(self.train_dataset.get_texts())
                 no_of_train_batches = (train_length // batch_size) + 1
 
                 correct = 0
-                for b in range(no_of_train_batches):
+                for i in range(no_of_train_batches):
                     train_batch = sess.run(train_next_element)
                     path_list = [el.decode('UTF-8') for el in train_batch[2]]
 
@@ -88,13 +87,12 @@ class EncodingExtractor(object):
 
                     acc, img_sum = sess.run([accuracy, sum], feed_dict)
 
-                    correct += acc * len(path_list)  # batch_size
+                    correct += acc * batch_size
                     thread = Thread(target=self.embedding_to_image,
                                     args=(self.root_dir, img_sum, path_list, extraction_parameters))
                     thread.start()
 
-                train_accuracy = correct / train_length
-                self.view.print_to_screen('Train accuracy: ' + str(train_accuracy))
+                self.compute_and_print_accuracy(correct, train_length, 'Train')
 
     def embedding_to_image(self, root_dir, img_sum, test_img, extraction_parameters):
         x = extraction_parameters.get_separator_size()
@@ -155,3 +153,8 @@ class EncodingExtractor(object):
                     spw += 1
 
             cv2.imwrite(full_path, img)
+
+    def compute_and_print_accuracy(self, correct, split_dataset_length, phase):
+        test_accuracy = correct / split_dataset_length
+        self.view.print_to_screen(
+            '{} accuracy: {} / {} = {}'.format(phase, int(correct), split_dataset_length, test_accuracy))
