@@ -107,15 +107,11 @@ class EncodingExtractor(object):
             dir_names = path.split('/')[-3:]
             full_path = os.path.join(root_dir,
                                      os.path.join(dir_names[0], dir_names[1], dir_names[2].replace('.jpg', '.png')))
-            parent_dir = os.path.abspath(os.path.join(full_path, os.pardir))
-
-            if not os.path.exists(parent_dir):
-                os.makedirs(parent_dir)
 
             img = cv2.imread(path, cv2.IMREAD_COLOR)
-            # skip empty images
-            if img is None:
-                continue
+            # # skip empty images
+            # if img is None:
+            #     continue
 
             img = cv2.resize(img, (extraction_parameters.get_image_w(), extraction_parameters.get_image_h()))
 
