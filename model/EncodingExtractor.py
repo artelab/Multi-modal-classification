@@ -109,10 +109,6 @@ class EncodingExtractor(object):
                                      os.path.join(dir_names[0], dir_names[1], dir_names[2].replace('.jpg', '.png')))
 
             img = cv2.imread(path, cv2.IMREAD_COLOR)
-            # # skip empty images
-            # if img is None:
-            #     continue
-
             img = cv2.resize(img, (extraction_parameters.get_image_w(), extraction_parameters.get_image_h()))
 
             assert extraction_parameters.get_separator_size() + superpixels_per_row * superpixel_w \
