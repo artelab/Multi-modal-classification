@@ -1,6 +1,3 @@
-from tqdm import tqdm
-
-
 class DatasetSplit(object):
 
     def __init__(self):
@@ -10,7 +7,7 @@ class DatasetSplit(object):
 
     def load_data(self, data_file, delimiter):
         with open(data_file) as tr:
-            for line in tqdm(tr.readlines()):
+            for line in tr.readlines():
                 line = line.replace('\n', '')
                 line = line.split(delimiter)
                 self.texts.append(line[0])

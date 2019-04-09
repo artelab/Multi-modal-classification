@@ -7,7 +7,7 @@ from dataManagement.DataLoader import DataLoader
 from parameterManager.ModelParameters import ModelParameters
 from parameterManager.TrainingParameters import TrainingParameters
 from tensorflowWrapper.FlagsParser import FlagsParser
-from trainer.ModelTrainer import ModelTrainer
+from model.ModelTrainer import ModelTrainer
 
 
 def main(args):

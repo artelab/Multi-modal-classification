@@ -3,7 +3,9 @@ import math
 
 class ExtractionParameters(object):
 
-    def __init__(self, output_image_width, encoding_height, ste_image_w, ste_separator_size, ste_superpixel_size):
+    def __init__(self, output_image_width, encoding_height, ste_image_w, ste_separator_size, ste_superpixel_size,
+                 batch_size):
+        self.batch_size = batch_size
         self.encoding_height = encoding_height
         self.output_image_width = output_image_width
         self.num_features = output_image_width * encoding_height
@@ -14,6 +16,9 @@ class ExtractionParameters(object):
         self.superpixel_h = ste_superpixel_size
         self.superpixels_per_row = (self.ste_image_w - 2 * self.separator_size) / self.superpixel_w
         self.superpixels_per_col = math.ceil(self.num_features / self.superpixels_per_row)
+
+    def get_batch_size(self):
+        return self.batch_size
 
     def get_encoding_height(self):
         return self.encoding_height
