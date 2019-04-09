@@ -1,57 +1,27 @@
-import math
 import os
 import shutil
+import sys
 from threading import Thread
 
 import cv2
 import numpy as np
 import tensorflow as tf
-from tflearn.data_utils import pad_sequences
 
 from dataManagement.DataHelper import DataHelper
 from dataManagement.DataLoader import DataLoader
-
-tf.flags.DEFINE_integer('embedding_dim', 128, 'Dimensionality of character embedding (default: 128)')
-tf.flags.DEFINE_string('filter_sizes', '3,4,5', 'Comma-separated filter sizes (default: \'3,4,5\')')
-tf.flags.DEFINE_integer('num_filters', 128, 'Number of filters per filter size (default: 128)')
-tf.flags.DEFINE_float('dropout_keep_prob', 0.5, 'Dropout keep probability (default: 0.5)')
-tf.flags.DEFINE_float('l2_reg_lambda', 0.0, 'L2 regularization lambda (default: 0.0)')
-
-tf.flags.DEFINE_integer('batch_size', 32, 'Batch Size (default: 64)')
-tf.flags.DEFINE_integer('num_epochs', 200, 'Number of training epochs (default: 200)')
-tf.flags.DEFINE_integer('evaluate_every', 500, 'Evaluate model on dev set after this many steps (default: 100)')
-tf.flags.DEFINE_integer('num_checkpoints', 5, 'Number of checkpoints to store (default: 5)')
-tf.flags.DEFINE_integer('patience', 100, 'Stop criteria (default: 100)')
-tf.flags.DEFINE_integer('output_image_width', 100, 'Size of output Image plus embedding  (default: 100)')
-tf.flags.DEFINE_integer('encoding_height', 10, 'Height of the output embedding  (default: 10)')
-
-tf.flags.DEFINE_integer('ste_image_w', 256, 'width of the output image for embedding and image  (default: 256)')
-tf.flags.DEFINE_integer('ste_separator_size', 4, 'blank space around the visual embedding (default: 4)')
-tf.flags.DEFINE_integer('ste_superpixel_size', 4, 'size of the superpixel size (default: 4)')
-
-tf.flags.DEFINE_string('train_path', '/home/super/datasets/ferramenta52-multimodal/train.csv',
-                       'csv file containing text|class|image_path')
-tf.flags.DEFINE_string('val_path', '/home/super/datasets/ferramenta52-multimodal/val.csv',
-                       'csv file containing text|class|image_path')
-tf.flags.DEFINE_string('save_model_dir_name', 'runs/ferramenta52-10-1',
-                       'dir used to save the model')
-tf.flags.DEFINE_string('output_dir', '/home/super/datasets/ferramenta52-multimodal/new_blank_encoding/output', 'dir used to save the new dataset')
-
-tf.flags.DEFINE_string('gpu_id', '', 'ID of the GPU to be used')
-
-FLAGS = tf.flags.FLAGS
-
-os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu_id
-
-num_features = FLAGS.output_image_width * FLAGS.encoding_height
-image_w = image_h = FLAGS.ste_image_w
-separator_size = FLAGS.ste_separator_size
-superpixel_w = superpixel_h = FLAGS.ste_superpixel_size
-superpixels_per_row = (image_w - 2 * separator_size) / superpixel_w
-superpixels_per_col = math.ceil(num_features / superpixels_per_row)
+from parameterManager.ExtractionParameters import ExtractionParameters
+from tensorflowWrapper.FlagsParser import FlagsParser
 
 
-def embedding_to_image(root_dir, img_sum, test_img):
+def embedding_to_image(root_dir, img_sum, test_img, extraction_parameters):
+    x = extraction_parameters.get_separator_size()
+    y = extraction_parameters.get_separator_size()
+    encoding_height = extraction_parameters.get_encoding_height()
+    superpixels_per_row = extraction_parameters.get_superpixel_per_row()
+    superpixel_w = extraction_parameters.get_superpixel_w()
+    output_image_width = extraction_parameters.get_output_image_width()
+    superpixel_h = extraction_parameters.get_superpixel_h()
+
     for image, path in zip(img_sum, test_img):
         dir_names = path.split('/')[-3:]
         full_path = os.path.join(root_dir,
@@ -61,28 +31,24 @@ def embedding_to_image(root_dir, img_sum, test_img):
         if not os.path.exists(parent_dir):
             os.makedirs(parent_dir)
 
-        # Load a color image
         img = cv2.imread(path, cv2.IMREAD_COLOR)
         # skip empty images
         if img is None:
-            return
-        img = cv2.resize(img, (image_w, image_h))
-        # create blank_image
-        # img = np.zeros((image_h,image_w,3), np.uint8)
+            continue
 
-        x = separator_size
-        y = separator_size
+        img = cv2.resize(img, (extraction_parameters.get_image_w(), extraction_parameters.get_image_h()))
 
-        assert separator_size + superpixels_per_row * superpixel_w <= image_w, 'the image width is smaller than the visual word width'
+        assert extraction_parameters.get_separator_size() + superpixels_per_row * superpixel_w \
+               <= extraction_parameters.get_image_w(), 'the image width is smaller than the visual word width'
 
-        text_encoding_crop = image[0:FLAGS.encoding_height, 0:FLAGS.output_image_width, :]
-        word_features = np.reshape(text_encoding_crop, (
-                FLAGS.output_image_width * FLAGS.encoding_height * 3))  # C-like index ordering
+        text_encoding_crop = image[0:encoding_height, 0:output_image_width, :]
+        word_features = np.reshape(text_encoding_crop,
+                                   (output_image_width * encoding_height * 3))  # C-like index ordering
 
         sp_i = 0  # superpixel index
 
         # write the embedding
-        for row in list(range(y, int(y + superpixels_per_col * superpixel_h), superpixel_h)):
+        for row in list(range(y, int(y + extraction_parameters.get_superpixel_per_col() * superpixel_h), superpixel_h)):
             spw = 0  # counter for superpixels in row
             for col in list(range(x, int(x + superpixels_per_row * superpixel_w), superpixel_w)):
                 ptl = sp_i * 3
@@ -107,44 +73,26 @@ def embedding_to_image(root_dir, img_sum, test_img):
         cv2.imwrite(full_path, img)
 
 
-def write_to_disk(root_dir, img_sum, test_img, save_features=False):
-    for image, path in zip(img_sum, test_img):
-        dir_names = path.split('/')[-3:]
-        full_path = os.path.join(root_dir,
-                                 os.path.join(dir_names[0], dir_names[1], dir_names[2].replace('.jpg', '.png')))
-        parent_dir = os.path.abspath(os.path.join(full_path, os.pardir))
-
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
-        cv2.imwrite(full_path, image * 255)
-
-        if save_features:
-            type_dir = os.path.abspath(os.path.join(parent_dir, os.pardir))  # train or test
-            type_dir_split = os.path.split(type_dir)
-            out_file_name = os.path.join(type_dir_split[0], type_dir_split[1] + '.csv')
-            text_encoding_crop = image[0:FLAGS.encoding_height, 0:FLAGS.output_image_width, :]
-            text_encoding_crop = np.reshape(text_encoding_crop, (
-                    FLAGS.output_image_width * FLAGS.encoding_height * 3))  # C-like index ordering
-            with open(out_file_name, 'a') as myfile:
-                myfile.write('{};{}\n'.format(path, np.array2string(text_encoding_crop, threshold=np.inf,
-                                                                    max_line_width=np.inf, separator=',').replace('\n',
-                                                                                                                  '')))
-
-
-def main():
+def main(args):
     num_words_to_keep = 30000
     num_words_x_doc = 100
+    flags_parser = FlagsParser(delimiter=';')
+    flags_parser.parse_parameter_from_file(args)
+    flags = flags_parser.get_flags()
 
-    image_size = FLAGS.output_image_width
+    extraction_parameters = ExtractionParameters(flags.output_image_width, flags.encoding_height, flags.ste_image_w,
+                                                 flags.ste_separator_size, flags.ste_superpixel_size)
 
-    batch_size = FLAGS.batch_size
-    model_dir = FLAGS.save_model_dir_name
+    os.environ['CUDA_VISIBLE_DEVICES'] = flags.gpu_id
 
-    data_helper = DataHelper(num_words_to_keep, FLAGS.save_model_dir_name)
+    batch_size = flags.batch_size
+    model_dir = flags.save_model_dir_name
 
-    train_path = FLAGS.train_path
-    val_path = FLAGS.val_path
-    root_dir = FLAGS.output_dir
+    data_helper = DataHelper(num_words_to_keep, flags.save_model_dir_name)
+
+    train_path = flags.train_path
+    val_path = flags.val_path
+    root_dir = flags.output_dir
 
     if os.path.exists(root_dir):
         shutil.rmtree(root_dir)
@@ -163,15 +111,7 @@ def main():
 
     data_helper.load_from_pickles()
     label_train, label_val = data_helper.preprocess_labels(training_data, val_data)
-    # label_train = data_helper.labels_to_one_hot(training_data.get_labels())
-    # label_val = data_helper.labels_to_one_hot(val_data.get_labels())
-
     text_train, text_val = data_helper.preprocess_texts(training_data, val_data, num_words_x_doc)
-    # text_train = data_helper.texts_to_indices(training_data.get_texts())
-    # text_val = data_helper.texts_to_indices(val_data.get_texts())
-    #
-    # text_train = pad_sequences(text_train, maxlen=num_words_x_doc, value=0.)
-    # text_val = pad_sequences(text_val, maxlen=num_words_x_doc, value=0.)
 
     print('\nEvaluating...\n')
     checkpoint_dir = os.path.abspath(os.path.join(model_dir, 'checkpoints'))
@@ -209,6 +149,8 @@ def main():
             accuracy = graph.get_operation_by_name('accuracy/accuracy').outputs[0]
             sum = graph.get_operation_by_name('sum').outputs[0]
 
+            image_size = extraction_parameters.get_output_image_width()
+
             correct = 0
             for b in range((val_length // batch_size) + 1):
                 images = []
@@ -230,12 +172,12 @@ def main():
                 acc, img_sum = sess.run([accuracy, sum], feed_dict)
 
                 correct += acc * len(path_list)  # batch_size
-                thread = Thread(target=embedding_to_image, args=(root_dir, img_sum, path_list))
-
+                thread = Thread(target=embedding_to_image,
+                                args=(root_dir, img_sum, path_list, extraction_parameters))
                 thread.start()
 
             test_accuracy = correct / val_length
-            print('Test accuracy: {}/{}={}'.format(correct, val_length, test_accuracy))
+            print('Test accuracy: {}/{}={}'.format(int(correct), val_length, test_accuracy))
 
             correct = 0
             for b in range((train_length // batch_size) + 1):
@@ -259,7 +201,7 @@ def main():
 
                 correct += acc * len(path_list)  # batch_size
 
-                thread = Thread(target=embedding_to_image, args=(root_dir, img_sum, path_list))
+                thread = Thread(target=embedding_to_image, args=(root_dir, img_sum, path_list,extraction_parameters))
                 thread.start()
 
             train_accuracy = correct / train_length
@@ -267,4 +209,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])

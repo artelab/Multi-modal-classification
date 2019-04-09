@@ -11,11 +11,9 @@ from trainer.ModelTrainer import ModelTrainer
 
 
 def main(args):
-    generator = FlagsParser(delimiter=';')
-    print(args)
-
-    generator.parse_parameter_from_file(args)
-    flags = generator.get_flags()
+    flags_parser = FlagsParser(delimiter=';')
+    flags_parser.parse_parameter_from_file(args)
+    flags = flags_parser.get_flags()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = flags.gpu_id
 

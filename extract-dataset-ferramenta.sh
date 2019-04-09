@@ -15,7 +15,7 @@ python3 extract_encoded_images.py \
                  --output_image_width ${w} \
                  --encoding_height ${encoding_height} \
                  --save_model_dir_name "runs/ferramenta52-$w-$encoding_height" \
-                 --gpu_id "" \
+                 --gpu_id "0,1,2" \
                  --batch_size 64 \
                  --ste_image_w ${ste_image_w} \
                  --ste_separator_size ${ste_separator_size} \
