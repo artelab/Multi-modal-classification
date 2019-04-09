@@ -85,7 +85,7 @@ class ModelTrainer(object):
                 saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
 
                 file_logger = FileLogger(os.path.join(out_dir, 'result.txt'))
-                file_logger.write_header(out_dir, self.train_dataset.get_images()[0].split('/')[4])
+                file_logger.write_header(out_dir)
 
                 sess.run(tf.global_variables_initializer())
 
