@@ -154,16 +154,6 @@ class ModelTrainer(object):
                         if patience.is_zero():
                             return
 
-    # @staticmethod
-    # def create_feed_dict(cnn, train_batch, train_images_batch, dropout_keep_prob):
-    #     feed_dict = {
-    #         cnn.input_x: train_batch[0],
-    #         cnn.input_y: train_batch[1],
-    #         cnn.input_mask: train_images_batch,
-    #         cnn.dropout_keep_prob: dropout_keep_prob
-    #     }
-    #     return feed_dict
-
     @staticmethod
     def store_model(model_params, current_step, sess, saver):
         checkpoint_dir = os.path.abspath(
