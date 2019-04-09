@@ -12,7 +12,6 @@ num_checkpoints;1;int
 patience;100;int
 output_image_width;100;int
 encoding_height;10;int
-gpu_id;0,1,2;str
 save_model_dir_name;runs/ferramenta52-10-1;str
 train_path;train.csv;str
 val_path;val.csv;str

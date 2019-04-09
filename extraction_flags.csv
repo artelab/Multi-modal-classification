@@ -3,7 +3,6 @@ num_words_x_doc;100;int
 output_image_width;100;int
 encoding_height;1;int
 save_model_dir_name;runs/ferramenta52-10-1;str
-gpu_id;0,1,2;str
 batch_size;64;int
 ste_image_w;227;int
 ste_separator_size;4;int

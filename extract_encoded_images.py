@@ -25,8 +25,6 @@ def main(args):
     extraction_parameters = ExtractionParameters(flags.output_image_width, flags.encoding_height, flags.ste_image_w,
                                                  flags.ste_separator_size, flags.ste_superpixel_size, flags.batch_size)
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = flags.gpu_id
-
     model_dir = flags.save_model_dir_name
 
     data_helper = DataHelper(flags.num_words_to_keep, flags.save_model_dir_name)

@@ -15,8 +15,6 @@ def main(args):
     flags_parser.parse_parameter_from_file(args)
     flags = flags_parser.get_flags()
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = flags.gpu_id
-
     output_image_width = flags.output_image_width
     encoding_height = flags.encoding_height
 
