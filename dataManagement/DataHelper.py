@@ -5,13 +5,11 @@ from tflearn.data_utils import pad_sequences
 from labelManagement.DatasetLabelEncoder import DatasetLabelEncoder
 from modelSaver.ModelPickler import ModelPickler
 from textManagement.TextTokenizer import TextTokenizer
-from view.View import View
 
 
 class DataHelper:
 
     def __init__(self, num_words_to_keep, directory_of_data):
-        self.view = View()
         self.label_encoder = DatasetLabelEncoder()
         self.tokenizer = TextTokenizer(num_words_to_keep)
         self.model_pickler = ModelPickler()

@@ -5,18 +5,21 @@ from threading import Thread
 import cv2
 import tensorflow as tf
 
+from view.View import View
+
 
 class EncodingExtractor(object):
 
     def __init__(self, train_dataset, val_dataset):
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
+        self.view = View()
 
     def extract(self, extraction_parameters, model_dir, root_dir):
-        print('\nEvaluating...\n')
+        self.view.print_to_screen('Evaluating...')
         checkpoint_dir = os.path.abspath(os.path.join(model_dir, 'checkpoints'))
         checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
-        print('Loading latest checkpoint: {}'.format(checkpoint_file))
+        self.view.print_to_screen('Loading latest checkpoint: {}'.format(checkpoint_file))
         graph = tf.Graph()
         with graph.as_default():
             sess = tf.Session()
@@ -87,7 +90,7 @@ class EncodingExtractor(object):
                     thread.start()
 
                 test_accuracy = correct / val_length
-                print('Test accuracy: {}/{}={}'.format(int(correct), val_length, test_accuracy))
+                self.view.print_to_screen('Test accuracy: {}/{}={}'.format(int(correct), val_length, test_accuracy))
 
                 correct = 0
                 train_length = len(text_train)
@@ -117,7 +120,7 @@ class EncodingExtractor(object):
                     thread.start()
 
                 train_accuracy = correct / train_length
-                print('Train accuracy: ' + str(train_accuracy))
+                self.view.print_to_screen('Train accuracy: ' + str(train_accuracy))
 
     def embedding_to_image(self, root_dir, img_sum, test_img, extraction_parameters):
         x = extraction_parameters.get_separator_size()
