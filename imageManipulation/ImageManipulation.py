@@ -8,7 +8,7 @@ class ImageManipulator(object):
 
     def preprocess_images(self, bunch_of_images):
         images_list = []
-        path_list = [el.decode('UTF-8') for el in bunch_of_images]
+        path_list = [image.decode('UTF-8') for image in bunch_of_images]
         for path in path_list:
             img = cv2.imread(path)
             img = cv2.resize(img, (self.output_width, self.output_width))

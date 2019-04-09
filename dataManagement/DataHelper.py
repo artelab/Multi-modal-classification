@@ -36,14 +36,6 @@ class DataHelper:
 
         return train_x, val_x
 
-    def store_preprocessors_to_disk(self):
-        self.model_pickler.pickle_models_to_disk(self.label_encoder, self.label_encoder_filename)
-        self.model_pickler.pickle_models_to_disk(self.tokenizer, self.tokenizer_filename)
-
-    def load_from_pickles(self):
-        self.label_encoder = self.model_pickler.load_pickle(self.label_encoder_filename)
-        self.tokenizer = self.model_pickler.load_pickle(self.tokenizer_filename)
-
     def train_one_hot_encoder(self, train_labels):
         return self.label_encoder.train_one_hot_encoder(train_labels)
 
@@ -55,3 +47,11 @@ class DataHelper:
 
     def labels_to_one_hot(self, labels):
         return self.label_encoder.encode_to_one_hot(labels)
+
+    def store_preprocessors_to_disk(self):
+        self.model_pickler.pickle_models_to_disk(self.label_encoder, self.label_encoder_filename)
+        self.model_pickler.pickle_models_to_disk(self.tokenizer, self.tokenizer_filename)
+
+    def load_from_pickles(self):
+        self.label_encoder = self.model_pickler.load_pickle(self.label_encoder_filename)
+        self.tokenizer = self.model_pickler.load_pickle(self.tokenizer_filename)
