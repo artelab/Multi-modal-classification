@@ -67,6 +67,7 @@ If you are in troubles running the code, please contact us:
 
 - Ignazio Gallo: *ignazio.gallo@uninsubria.it*
 - Alessandro Calefati: *a.calefati@uninsubria.it* 
+- Shah Nawaz: *snawaz@uninsubria.it* 
 
 
 
