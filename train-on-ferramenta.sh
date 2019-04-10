@@ -3,8 +3,8 @@
 
 declare -a arr=("http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/images-train.tar.gz"
                 "http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/images-val.tar.gz"
-                "http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/text-images-train.csv"
-                "http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/text-images-val.csv")
+                "http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/text-image-train.csv"
+                "http://artelab.dista.uninsubria.it/downloads/datasets/commercial_offers/ferramenta/text-image-val.csv")
 
 for link in "${arr[@]}"
 do
@@ -13,7 +13,7 @@ do
    then
         echo "$file found. Skipping"
    else
-        echo "Downloading the dataset..."
+        echo "Downloading $file"
         curl -O ${link}
    fi
 done
@@ -30,8 +30,8 @@ then
     mv images-val val
 fi
 
-mv text-images-train.csv train.csv
-mv text-images-val.csv val.csv
+mv text-image-train.csv train.csv
+mv text-image-val.csv val.csv
 
 echo "Starting training process..."
 python3 scripts/train_model.py training_parameters.csv
