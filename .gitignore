@@ -5,3 +5,4 @@ runs/
 train/
 val/
 __pycache__/
+*.pyc
