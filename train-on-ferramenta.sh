@@ -27,7 +27,7 @@ fi
 
 if [[ -f images-val ]]
 then
-    tar xfz images-train.tar.gz
+    tar xfz images-val.tar.gz
     mv images-val val
 fi
 
