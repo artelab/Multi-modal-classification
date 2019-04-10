@@ -4,3 +4,4 @@ output/
 runs/
 train/
 val/
+__pycache__/
