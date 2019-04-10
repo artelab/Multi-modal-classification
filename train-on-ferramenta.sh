@@ -15,7 +15,6 @@ do
    else
         echo "Downloading the dataset..."
         curl -O ${link}
-        tar xfz ${file}
    fi
 done
 
