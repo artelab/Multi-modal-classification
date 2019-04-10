@@ -1,2 +1,6 @@
 *.iml
 *.xml
+output/
+runs/
+train/
+val/
