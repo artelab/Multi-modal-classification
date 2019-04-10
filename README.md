@@ -65,7 +65,7 @@ please check the format of **train.csv** and **val.csv**.
 
 If you are in troubles running the code, please contact us:
 
-- Ignazio Gallo: *i.gallo@uninsubria.it*
+- Ignazio Gallo: *ignazio.gallo@uninsubria.it*
 - Alessandro Calefati: *a.calefati@uninsubria.it* 
 
 
