@@ -18,18 +18,13 @@ do
    fi
 done
 
-if [[ -f images-train ]]
-then
-    tar xfz images-train.tar.gz
-    mv images-train train
-fi
+echo "Unpacking images files..."
+tar xfz images-train.tar.gz
+tar xfz images-val.tar.gz
 
-if [[ -f images-val ]]
-then
-    tar xfz images-val.tar.gz
-    mv images-val val
-fi
-
+echo "Renaming files..."
+mv images-train train
+mv images-val val
 mv text-image-train.csv train.csv
 mv text-image-val.csv val.csv
 
