@@ -28,5 +28,5 @@ then
 fi
 
 echo "Starting training process..."
-python3 train_model.py training_flags.csv
+python3 train_model.py training_parameters.csv
 echo "Done!"
