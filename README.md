@@ -7,6 +7,9 @@ I. Gallo, A. Calefati, S. Nawaz and M.K. Janjua,
 presented at 
 2018 International Conference on Digital Image Computing: Techniques and Applications (DICTA), Canberra, Australia, 2018.
 
+If you use this code entirely or partially, please cite 
+[paper](http://artelab.dista.uninsubria.it/res/research/bibtex/2018/2018_gallo_dicta.txt)
+
 
 #### Pre-requisites
 
